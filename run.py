@@ -1,7 +1,7 @@
 from PyQt5 import  uic
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import QThread,pyqtSignal
-from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication
+from PyQt5.QtCore import QThread,pyqtSignal,Qt
+from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication,QVBoxLayout,QFrame,QWidget,QScrollArea
 import pyrebase
 import time 
 import json
@@ -39,6 +39,26 @@ class Ui(QMainWindow):
         super(Ui, self).__init__()
         uic.loadUi('project.ui', self)
         self.send_button.clicked.connect(self.send)
+        self.scrollArea.verticalScrollBar().setStyleSheet("QScrollBar:vertical {"              
+    "    background:#162432;"
+    "    width:14px;    "
+    "    margin: 10px 0px 10px 0px;"
+    "    border-radius:5px"
+    "}"
+    "QScrollBar::handle:vertical {"
+    "    background: #4d525e;"
+    "    border-radius:5px;"
+    "    maximum-height:30px"
+    "}"
+    "QScrollBar::add-line:vertical {"
+    "    height: 0px"
+    "}"
+    "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+    "    background: none"
+    "}"
+    "QScrollBar::sub-line:vertical {"
+    "    height: 0px;"
+    "}")
         self.thread = checkMessage()
         self.thread.start()
         self.thread.update.connect(self.change_text)
@@ -55,21 +75,70 @@ class Ui(QMainWindow):
         print(msg)
         if msg["path"] == "/":
             for x in msg["data"]:
-                
-                # self.display.setHtml(f"<br><p align='center'>{x}</p><br>")
+                date_widget = QLabel()
+                date_widget.setText(x)
+                date_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                date_widget.setStyleSheet("color:gray;background:rgba(0, 0, 0, 0.44)")
+                font  =QFont()
+                font.setBold(True)
+                font.setPointSize(13)
+                date_widget.setFont(font)
+                self.display.addWidget(date_widget)
                 for y in msg["data"][x]:
                     h_layout = QHBoxLayout()
-                    msg_box = QLabel()
-                    msg_box.setText(f"{msg['data'][x][y]['from']}\n{msg['data'][x][y]['message']}")
-                    msg_box.setStyleSheet("background:#b4eeb4;border-radius: 6px 23px;")
-                    msg_box.setFont(QFont("Calibri",12))
-                    h_layout.addWidget(msg_box)
+                    h_layout.addWidget(self.create_msgbox(msg['data'][x][y]['from'],y,msg['data'][x][y]['message']))
                     h_layout.addStretch()
                     self.display.addLayout(h_layout)
                     
         else:
-            pass
+            _,dte,tme =  msg["path"].split("/")
+            date_widget = QLabel()
+            date_widget.setText(dte)
+            date_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            date_widget.setStyleSheet("color:gray;background:rgba(0, 0, 0, 0.44)")
+            font  =QFont()
+            font.setBold(True)
+            font.setPointSize(13)
+            date_widget.setFont(font)
+            self.display.addWidget(date_widget)
+            h_layout = QHBoxLayout()
+            h_layout.addWidget(self.create_msgbox(msg["data"]["from"],tme,msg["data"]["message"]))
+            h_layout.addStretch()
+            self.display.addLayout(h_layout)
+    def create_msgbox(self,usr,tm,msg):
+        msg_box = QWidget()
+        # msg_box.setBaseSize(209,91)
+        msg_box.setStyleSheet("background:#b4eeb4;border-radius: 23px;")
+        verticalLayout = QVBoxLayout(msg_box)
+        verticalLayout.setContentsMargins(9, 9, 9, 0)
+
+        frame = QFrame(msg_box)
+        frame.setStyleSheet("background:#8dbb8d;border-width:10px;border-radius:8px")
+        frame.setFrameShape(QFrame.StyledPanel)
+        frame.setFrameShadow(QFrame.Raised)
+
+        horizontalLayout = QHBoxLayout(frame)
+        usr_name = QLabel(frame)
+        horizontalLayout.addWidget(usr_name)
+        tme = QLabel(frame)
+        tme.setLayoutDirection(Qt.LeftToRight)
+        tme.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+        tme.setWordWrap(True)
+        horizontalLayout.addWidget(tme)
+        verticalLayout.addWidget(frame)
+        main_msg = QLabel()
+        font = QFont()
+        font.setFamily("Segoe UI Black")
+        font.setPointSize(10)
+        font.setBold(True)
+        main_msg.setFont(font)
+        main_msg.setStyleSheet("border-radius:10px")
+        verticalLayout.addWidget(main_msg)
+        usr_name.setText(usr)
+        tme.setText(tm)
+        main_msg.setText(msg)
         
+        return msg_box
 class checkMessage(QThread):
     update = pyqtSignal(dict)
     def check(self,message):
