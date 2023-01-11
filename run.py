@@ -184,12 +184,12 @@ class Ui_signUp(QMainWindow):
         self.email = self.email_edit.text()
         self.password = self.pass_edit.text()
         self.name = self.name_edit.text()
-        try:
-            auth.create_user_with_email_and_password(self.email, self.password)
-        except Exception as e:
-            # if "message": "WEAK_PASSWORD : Password should be at least 6 characters" in str(e):
-        user = auth.sign_in_with_email_and_password(self.email,self.password)
-        user.update_profile(self.name)
+        # try:
+        #     auth.create_user_with_email_and_password(self.email, self.password)
+        # except Exception as e:
+        #     # if "message": "WEAK_PASSWORD : Password should be at least 6 characters" in str(e):
+        # user = auth.sign_in_with_email_and_password(self.email,self.password)
+        # user.update_profile(self.name)
 
 
 
