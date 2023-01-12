@@ -20,7 +20,7 @@
    <string>AAA Chat God</string>
   </property>
   <property name="styleSheet">
-   <string notr="true"/>
+   <string notr="true">background-color:#362165;</string>
   </property>
   <property name="iconSize">
    <size>
@@ -91,7 +91,7 @@ background-image:url(&quot;bg2.svg&quot;);margin-right:7px;margin-left:7px
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>704</width>
+         <width>515</width>
          <height>467</height>
         </rect>
        </property>
@@ -236,6 +236,80 @@ background-image:url(&quot;bg2.svg&quot;);margin-right:7px;margin-left:7px
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QDockWidget" name="settings">
+   <property name="minimumSize">
+    <size>
+     <width>185</width>
+     <height>40</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>160</width>
+     <height>200</height>
+    </size>
+   </property>
+   <property name="windowIcon">
+    <iconset theme="audio-volume-low"/>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color:white;border:2px solid black</string>
+   </property>
+   <property name="windowTitle">
+    <string>Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <widget class="QPushButton" name="pass_btn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>12</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border:none;background:rgba(44, 7, 60, 0.8);border-radius:10px</string>
+     </property>
+     <property name="text">
+      <string>Reset Password</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="del_btn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Comic Sans MS</family>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border:none;background:rgba(44, 7, 60, 0.8);border-radius:10px;color:red</string>
+     </property>
+     <property name="text">
+      <string>Delete Account</string>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <action name="actionAAA_program">
    <property name="text">

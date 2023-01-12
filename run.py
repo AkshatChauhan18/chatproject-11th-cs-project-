@@ -1,6 +1,6 @@
 from PyQt5 import  uic
 from PyQt5.QtGui import QFont,QIcon
-from PyQt5.QtCore import QThread,pyqtSignal,Qt,QSize
+from PyQt5.QtCore import QThread,pyqtSignal,Qt
 from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication,QVBoxLayout,QFrame,QWidget
 import pyrebase
 import time 
@@ -23,6 +23,7 @@ config = {"apiKey": "AIzaSyCLBtEH-AVU-A9kmI7lXjuoC3jne75cXU8",
 
   "measurementId": "G-DM43PXDCXE"
 }
+
 firebase  = pyrebase.initialize_app(config)
 auth = firebase.auth()
 def read_creds():
@@ -38,20 +39,13 @@ def firebase_auth(email,password):
     return [user,db]
 
 class Ui(QMainWindow):
-    def __init__(self):
+    def __init__(self,user_info,db_info,user_name):
         super(Ui, self).__init__()
         uic.loadUi('project.ui', self)
-        self.creds = read_creds()
-        self.setWindowIcon(QIcon("icon.ico"))
-        try:
-            self.auth_ep = firebase_auth(self.creds[0],self.creds[1])
-        except Exception:
-            print("hello")
-            self.close()
-            app = QApplication(sys.argv)
-            window = Ui_signUp()
-            window.show()
-            app.exec_()
+        self.setWindowIcon(QIcon("icon.ico"))   
+        self.user_name = user_name
+        self.user_info = user_info
+        self.db_info = db_info
         self.send_button.clicked.connect(self.send)
         self.scrollArea.verticalScrollBar().setStyleSheet("QScrollBar:vertical {"              
     "    background:#162432;"
@@ -62,7 +56,7 @@ class Ui(QMainWindow):
     "QScrollBar::handle:vertical {"
     "    background: #4d525e;"
     "    border-radius:5px;"
-    "    maximum-height:30px"
+    "    max-height:30px"
     "}"
     "QScrollBar::add-line:vertical {"
     "    height: 0px"
@@ -73,14 +67,14 @@ class Ui(QMainWindow):
     "QScrollBar::sub-line:vertical {"
     "    height: 0px;"
     "}")
-        self.thread = checkMessage(self.auth_ep[1],self.auth_ep[0])
+        self.thread = checkMessage(self.db_info,self.user_info)
         self.thread.start()
         self.thread.update.connect(self.change_text)
-        self.show()
+        
         
     def send(self):
-        data = {"from":self.creds[0],"message":f"{self.type.text()}"}
-        self.auth[1].child("chat").child(f"{time.strftime('%d-%m-%Y')}").child(f"{time.strftime('%H:%M:%S')}").set(data, self.auth[0]['idToken'])
+        data = {"from":self.user_name,"message":f"{self.type.text()}"}
+        self.db_info.child("chat").child(f"{time.strftime('%d-%m-%Y')}").child(f"{time.strftime('%H:%M:%S')}").set(data, self.user_info['idToken'])
 
     def change_text(self , val):
         msg=val
@@ -122,16 +116,13 @@ class Ui(QMainWindow):
     
     def create_msgbox(self,usr,tm,msg):
         msg_box = QWidget()
-        # msg_box.setBaseSize(209,91)
         msg_box.setStyleSheet("background:#b4eeb4;border-radius: 23px;")
         verticalLayout = QVBoxLayout(msg_box)
         verticalLayout.setContentsMargins(9, 9, 9, 0)
-
         frame = QFrame(msg_box)
         frame.setStyleSheet("background:#8dbb8d;border-width:10px;border-radius:8px")
         frame.setFrameShape(QFrame.StyledPanel)
         frame.setFrameShadow(QFrame.Raised)
-
         horizontalLayout = QHBoxLayout(frame)
         usr_name = QLabel(frame)
         horizontalLayout.addWidget(usr_name)
@@ -153,6 +144,7 @@ class Ui(QMainWindow):
         tme.setText(tm)
         main_msg.setText(msg)
         return msg_box
+
 class checkMessage(QThread):
     update = pyqtSignal(dict)
     def __init__(self, db,user):
@@ -175,7 +167,8 @@ class Ui_signUp(QMainWindow):
         self.login_win = Ui_logIn()
         self.login_win.setParent(self)
         self.login_win.setHidden(True)
-        
+        self.login_win.login_btn.clicked.connect(self.login)
+ 
     def show_login(self):
         self.frame.setHidden(True)
         self.login_win.setHidden(False)
@@ -184,13 +177,69 @@ class Ui_signUp(QMainWindow):
         self.email = self.email_edit.text()
         self.password = self.pass_edit.text()
         self.name = self.name_edit.text()
-        # try:
-        #     auth.create_user_with_email_and_password(self.email, self.password)
-        # except Exception as e:
-        #     # if "message": "WEAK_PASSWORD : Password should be at least 6 characters" in str(e):
-        # user = auth.sign_in_with_email_and_password(self.email,self.password)
-        # user.update_profile(self.name)
+        old_ss = self.name_edit.styleSheet()
+        for x in [".", "$", "#", "[", "]", "/"]:
+            if x in self.name:
+                self.name_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.name_edit.setPlaceholderText(f"User name can't have {x}")
+                self.name_edit.clear()
+                return
+        try:
+            auth.create_user_with_email_and_password(self.email, self.password)
+        except Exception as e:
+            print(e)
+            if '"message": "WEAK_PASSWORD : Password should be at least 6 characters"' in str(e):
+                self.email_edit.setStyleSheet(old_ss)
+                self.pass_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.pass_edit.setPlaceholderText("Pswd must be at least 6 characters")
+                self.pass_edit.clear()
+            elif '"message": "INVALID_EMAIL"' in str(e):
+                self.pass_edit.setStyleSheet(old_ss)
+                self.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.email_edit.setPlaceholderText("Invalid Email!")
+                self.email_edit.clear()
+            elif '"message": "EMAIL_EXISTS"' in str(e):
+                self.pass_edit.setStyleSheet(old_ss)
+                self.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.email_edit.setPlaceholderText("Email Exists!")
+                self.email_edit.clear()
+        else:  
+            user_info,db_info= firebase_auth(self.email,self.password)
+            self.main_window = Ui(user_info,db_info,self.email)
+            self.main_window.show()
+            self.close()
 
+            
+
+    def login(self):
+        self.email = self.login_win.email_edit.text()
+        self.password = self.login_win.pass_edit.text()
+        old_ss = self.login_win.pass_edit.styleSheet()
+        try:
+            firebase_auth(self.email,self.password)
+        except Exception as e:
+            if '"message": "INVALID_EMAIL"' in str(e):
+                self.login_win.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.login_win.email_edit.setPlaceholderText("Invalid Email!")
+                self.login_win.email_edit.clear()
+            elif '"message": "EMAIL_NOT_FOUND"' in str(e):
+                self.login_win.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.login_win.pass_edit.setStyleSheet(old_ss)
+                self.login_win.email_edit.setPlaceholderText("User not found!")
+                self.login_win.email_edit.clear()
+            elif '"message": "INVALID_PASSWORD"' in str(e):
+                self.login_win.pass_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
+                self.login_win.email_edit.setStyleSheet(old_ss)
+                self.login_win.pass_edit.setPlaceholderText("Invalid Password!")
+                self.login_win.pass_edit.clear()
+        else:
+            with open("credentials.json","w") as file:
+                file.write(json.dumps({"email":self.email,"password":self.password}))
+
+            user_info,db_info = firebase_auth(self.email,self.password)
+            self.main_window = Ui(user_info,db_info,self.email)
+            self.main_window.show()
+            self.close()
 
 
     
@@ -199,41 +248,9 @@ class Ui_logIn(QWidget):
         super(Ui_logIn, self).__init__()
         uic.loadUi('login.ui', self)
         self.setWindowIcon(QIcon("icon.ico"))
-        self.login_btn.clicked.connect(self.login)
 
-    def login(self):
-        self.email = self.email_edit.text()
-        self.password = self.pass_edit.text()
-        old_ss = self.pass_edit.styleSheet()
-        try:
-            firebase_auth(self.email,self.password)
-        except Exception as e:
-            if '"message": "INVALID_EMAIL"' in str(e):
-                self.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
-                self.email_edit.setPlaceholderText("Invalid Email!")
-                self.email_edit.clear()
-            elif '"message": "EMAIL_NOT_FOUND"' in str(e):
-                self.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
-                self.pass_edit.setStyleSheet(old_ss)
-                self.email_edit.setPlaceholderText("User not found!")
-                self.email_edit.clear()
-            elif '"message": "INVALID_PASSWORD"' in str(e):
-                self.pass_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
-                self.email_edit.setStyleSheet(old_ss)
-                self.pass_edit.setPlaceholderText("Invalid Password!")
-                self.pass_edit.clear()
-        else:
-            with open("credentials.json","w") as file:
-                file.write(json.dumps({"email":self.email,"password":self.password}))
-            self.close()
-            app = QApplication(sys.argv)
-            window = Ui()
-            app.exec_()
-
-        
-
-        
-
+   
+    
 creds = read_creds()
 if creds[0] == "" or creds[1] =="":
     app = QApplication(sys.argv)
@@ -241,11 +258,15 @@ if creds[0] == "" or creds[1] =="":
     window.show()
     app.exec_()
 else:
-    app = QApplication(sys.argv)
-    window = Ui()
-    window.show()
-    app.exec_()
-
-
-
-    
+    try:
+        user_info,db_info = firebase_auth(creds[0],creds[1])
+    except Exception:
+        app = QApplication(sys.argv)
+        window = Ui_signUp()
+        window.show()
+        app.exec_()
+    else:
+        app = QApplication(sys.argv)
+        window = Ui(user_info,db_info,creds[0])
+        window.show()
+        app.exec_()
