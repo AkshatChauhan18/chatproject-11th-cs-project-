@@ -204,7 +204,7 @@ background-image:url(&quot;bg2.svg&quot;);margin-right:7px;margin-left:7px
      </widget>
     </item>
     <item row="0" column="2">
-     <widget class="QPushButton" name="user_button">
+     <widget class="QPushButton" name="user_btn">
       <property name="minimumSize">
        <size>
         <width>45</width>

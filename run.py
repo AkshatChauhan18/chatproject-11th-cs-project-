@@ -47,6 +47,8 @@ class Ui(QMainWindow):
         self.user_info = user_info
         self.db_info = db_info
         self.send_button.clicked.connect(self.send)
+        self.user_btn.clicked.connect(self.show_settings)
+        self.settings.setHidden(True)
         self.scrollArea.verticalScrollBar().setStyleSheet("QScrollBar:vertical {"              
     "    background:#162432;"
     "    width:14px;    "
@@ -71,6 +73,8 @@ class Ui(QMainWindow):
         self.thread.start()
         self.thread.update.connect(self.change_text)
         
+    def show_settings(self):
+        self.settings.setHidden(False)
         
     def send(self):
         data = {"from":self.user_name,"message":f"{self.type.text()}"}
@@ -204,6 +208,8 @@ class Ui_signUp(QMainWindow):
                 self.email_edit.setPlaceholderText("Email Exists!")
                 self.email_edit.clear()
         else:  
+            with open("credentials.json","w") as file:
+                file.write(json.dumps({"email":self.email,"password":self.password}))
             user_info,db_info= firebase_auth(self.email,self.password)
             self.main_window = Ui(user_info,db_info,self.email)
             self.main_window.show()
@@ -211,7 +217,7 @@ class Ui_signUp(QMainWindow):
 
             
 
-    def login(self):
+    def login(self): 
         self.email = self.login_win.email_edit.text()
         self.password = self.login_win.pass_edit.text()
         old_ss = self.login_win.pass_edit.styleSheet()
