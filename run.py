@@ -46,8 +46,11 @@ class Ui(QMainWindow):
         self.user_name = user_name
         self.user_info = user_info
         self.db_info = db_info
-        self.send_button.clicked.connect(self.send)
+        
+        self.sh = 0
         self.user_btn.clicked.connect(self.show_settings)
+        self.send_button.clicked.connect(self.send)
+        self.pass_btn.clicked.connect(self.reset_password)
         self.settings.setHidden(True)
         self.scrollArea.verticalScrollBar().setStyleSheet("QScrollBar:vertical {"              
     "    background:#162432;"
@@ -74,8 +77,17 @@ class Ui(QMainWindow):
         self.thread.update.connect(self.change_text)
         
     def show_settings(self):
-        self.settings.setHidden(False)
-        
+        if self.sh == 0:
+            
+            self.settings.setHidden(False)
+            self.sh =1
+        else:
+            self.settings.setHidden(True)
+            self.sh =0
+    
+    def reset_password(self):
+        auth.send_password_reset_email(self.user_name)
+
     def send(self):
         data = {"from":self.user_name,"message":f"{self.type.text()}"}
         self.db_info.child("chat").child(f"{time.strftime('%d-%m-%Y')}").child(f"{time.strftime('%H:%M:%S')}").set(data, self.user_info['idToken'])
@@ -225,6 +237,7 @@ class Ui_signUp(QMainWindow):
             firebase_auth(self.email,self.password)
         except Exception as e:
             if '"message": "INVALID_EMAIL"' in str(e):
+                self.login_win.pass_edit.setStyleSheet(old_ss)
                 self.login_win.email_edit.setStyleSheet(old_ss.replace("color:rgba(48, 227, 197, 1)","color:red"))
                 self.login_win.email_edit.setPlaceholderText("Invalid Email!")
                 self.login_win.email_edit.clear()
