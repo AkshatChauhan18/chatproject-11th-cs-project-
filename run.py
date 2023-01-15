@@ -1,5 +1,5 @@
-from PyQt5 import  uic
-from PyQt5.QtGui import QFont,QIcon
+from PyQt5 import  uic #loading ui files
+from PyQt5.QtGui import QFont,QIcon 
 from PyQt5.QtCore import QThread,pyqtSignal,Qt
 from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication,QVBoxLayout,QFrame,QWidget,QMessageBox
 import pyrebase
@@ -26,6 +26,7 @@ config = {"apiKey": "AIzaSyCLBtEH-AVU-A9kmI7lXjuoC3jne75cXU8",
 
 firebase  = pyrebase.initialize_app(config)
 auth = firebase.auth()
+
 def read_creds():
     with open("credentials.json","r") as file:
         creds = file.read()
@@ -72,6 +73,7 @@ class Ui(QMainWindow):
     "QScrollBar::sub-line:vertical {"
     "    height: 0px;"
     "}")
+    
         self.thread = checkMessage(self.db_info,self.user_info)
         self.thread.start()
         self.thread.update.connect(self.change_text)
@@ -259,7 +261,7 @@ class Ui_signUp(QMainWindow):
         self.password = self.login_win.pass_edit.text()
         old_ss = self.login_win.pass_edit.styleSheet()
         try:
-            firebase_auth(self.email,self.password)
+            user_info,db_info=firebase_auth(self.email,self.password)
         except Exception as e:
             if '"message": "INVALID_EMAIL"' in str(e):
                 self.login_win.pass_edit.setStyleSheet(old_ss)
@@ -280,7 +282,6 @@ class Ui_signUp(QMainWindow):
             with open("credentials.json","w") as file:
                 file.write(json.dumps({"email":self.email,"password":self.password}))
 
-            user_info,db_info = firebase_auth(self.email,self.password)
             self.main_window = Ui(user_info,db_info,self.email)
             self.main_window.show()
             self.close()
@@ -296,6 +297,7 @@ class Ui_logIn(QWidget):
    
     
 creds = read_creds()
+
 if creds[0] == "" or creds[1] =="":
     app = QApplication(sys.argv)
     window = Ui_signUp()
