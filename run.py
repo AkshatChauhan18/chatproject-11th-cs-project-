@@ -1,7 +1,7 @@
 from PyQt5 import  uic
 from PyQt5.QtGui import QFont,QIcon
 from PyQt5.QtCore import QThread,pyqtSignal,Qt
-from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication,QVBoxLayout,QFrame,QWidget
+from PyQt5.QtWidgets import QHBoxLayout,QLabel ,QMainWindow,QApplication,QVBoxLayout,QFrame,QWidget,QMessageBox
 import pyrebase
 import time 
 import json
@@ -46,11 +46,11 @@ class Ui(QMainWindow):
         self.user_name = user_name
         self.user_info = user_info
         self.db_info = db_info
-        
         self.sh = 0
         self.user_btn.clicked.connect(self.show_settings)
         self.send_button.clicked.connect(self.send)
         self.pass_btn.clicked.connect(self.reset_password)
+        self.del_btn.clicked.connect(self.delete_user_warning)
         self.settings.setHidden(True)
         self.scrollArea.verticalScrollBar().setStyleSheet("QScrollBar:vertical {"              
     "    background:#162432;"
@@ -87,6 +87,17 @@ class Ui(QMainWindow):
     
     def reset_password(self):
         auth.send_password_reset_email(self.user_name)
+        self.show_Warning("Password reset email sent!","pass").exec()
+
+    def delete_user_warning(self):
+        warning = self.show_Warning("Do you really want to delete your account?","acc")
+        returnValue = warning.exec()
+        if returnValue == QMessageBox.Yes:
+            print(self.user_name)
+            auth.delete_user_account(self.user_info["idToken"])
+            self.close()
+            
+        
 
     def send(self):
         data = {"from":self.user_name,"message":f"{self.type.text()}"}
@@ -99,14 +110,8 @@ class Ui(QMainWindow):
         print(msg)
         if msg["path"] == "/":
             for x in msg["data"]:
-                date_widget = QLabel()
-                date_widget.setText(x)
-                date_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                date_widget.setStyleSheet("color:gray;background:rgba(0, 0, 0, 0.44)")
-                font  =QFont()
-                font.setBold(True)
-                font.setPointSize(13)
-                date_widget.setFont(font)
+                self.current_date=x
+                date_widget = self.create_date_widget(x)
                 self.display.addWidget(date_widget)
                 for y in msg["data"][x]:
                     h_layout = QHBoxLayout()
@@ -116,15 +121,10 @@ class Ui(QMainWindow):
                     
         else:
             _,dte,tme =  msg["path"].split("/")
-            date_widget = QLabel()
-            date_widget.setText(dte)
-            date_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            date_widget.setStyleSheet("color:gray;background:rgba(0, 0, 0, 0.44)")
-            font  =QFont()
-            font.setBold(True)
-            font.setPointSize(13)
-            date_widget.setFont(font)
-            self.display.addWidget(date_widget)
+            if dte != self.current_date:
+                date_widget = self.create_date_widget(dte)
+                self.display.addWidget(date_widget)
+                self.current_date = dte
             h_layout = QHBoxLayout()
             h_layout.addWidget(self.create_msgbox(msg["data"]["from"],tme,msg["data"]["message"]))
             h_layout.addStretch()
@@ -132,20 +132,17 @@ class Ui(QMainWindow):
     
     def create_msgbox(self,usr,tm,msg):
         msg_box = QWidget()
-        msg_box.setStyleSheet("background:#b4eeb4;border-radius: 23px;")
+        msg_box.setStyleSheet("background:#b4eeb4;border-radius: 18px;")
         verticalLayout = QVBoxLayout(msg_box)
         verticalLayout.setContentsMargins(9, 9, 9, 0)
         frame = QFrame(msg_box)
         frame.setStyleSheet("background:#8dbb8d;border-width:10px;border-radius:8px")
-        frame.setFrameShape(QFrame.StyledPanel)
-        frame.setFrameShadow(QFrame.Raised)
         horizontalLayout = QHBoxLayout(frame)
         usr_name = QLabel(frame)
-        horizontalLayout.addWidget(usr_name)
         tme = QLabel(frame)
-        tme.setLayoutDirection(Qt.LeftToRight)
         tme.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         tme.setWordWrap(True)
+        horizontalLayout.addWidget(usr_name)
         horizontalLayout.addWidget(tme)
         verticalLayout.addWidget(frame)
         main_msg = QLabel()
@@ -160,6 +157,34 @@ class Ui(QMainWindow):
         tme.setText(tm)
         main_msg.setText(msg)
         return msg_box
+
+    def create_date_widget(self,dte):
+        date_widget = QLabel()
+        date_widget.setText(dte)
+        date_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        date_widget.setStyleSheet("color:gray;background:rgba(0, 0, 0, 0.44)")
+        date_widget.setMaximumHeight(30)
+        font  =QFont()
+        font.setBold(True)
+        font.setPointSize(13)
+        date_widget.setFont(font)
+        return date_widget
+
+    def show_Warning(self,text,type):
+        msg = QMessageBox(self)
+        msg.setStyleSheet("background:none;color:rgba(48, 227, 197, 1)")
+        msg.setIcon(QMessageBox.Information)
+        font = QFont()
+        font.setBold(True)
+        msg.setFont(font)
+        if type == "acc":
+            msg.setIcon(QMessageBox.Warning)
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        
+        msg.setText(text)
+        msg.setWindowTitle("Warning")
+        return msg
+
 
 class checkMessage(QThread):
     update = pyqtSignal(dict)
@@ -279,7 +304,8 @@ if creds[0] == "" or creds[1] =="":
 else:
     try:
         user_info,db_info = firebase_auth(creds[0],creds[1])
-    except Exception:
+    except Exception as e:
+        print(e)
         app = QApplication(sys.argv)
         window = Ui_signUp()
         window.show()
